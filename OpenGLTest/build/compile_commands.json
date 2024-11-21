@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/home/s5221034/ASE/OpenGLTest/build",
+  "command": "/opt/rh/gcc-toolset-13/root/usr/bin/gcc -I/home/s5221034/ASE/OpenGLTest/include -g -o CMakeFiles/glad.dir/src/glad.c.o -c /home/s5221034/ASE/OpenGLTest/src/glad.c",
+  "file": "/home/s5221034/ASE/OpenGLTest/src/glad.c",
+  "output": "CMakeFiles/glad.dir/src/glad.c.o"
+},
+{
+  "directory": "/home/s5221034/ASE/OpenGLTest/build",
+  "command": "/opt/rh/gcc-toolset-13/root/usr/bin/g++ -I/home/s5221034/ASE/OpenGLTest/include -isystem /public/devel/24-25/vcpkg/installed/x64-linux/include -g -std=gnu++17 -o CMakeFiles/OpenGLTest.dir/src/main.cpp.o -c /home/s5221034/ASE/OpenGLTest/src/main.cpp",
+  "file": "/home/s5221034/ASE/OpenGLTest/src/main.cpp",
+  "output": "CMakeFiles/OpenGLTest.dir/src/main.cpp.o"
+}
+]

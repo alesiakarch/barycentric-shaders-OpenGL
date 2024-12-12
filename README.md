@@ -24,5 +24,11 @@ that looked into developing NPR shaders themselves, alternating the input textur
 
 Given this research, I have several options on which way I can implement the "effect": either as texture manipulation and shading or as a general post-processing effect on the scene. 
 
-Alternatively, if this idea is out of the scope of this and future units, I could try making a snow particle system with some user controls as practice.  
+Suggested tool structure: 
+
+1) Standalone OpenGL scene with 3D environment
+2) Custom model loader functionality
+3) Generates different maps
+4) Assembles them together into a final look
+5) Projects the complete image onto the view plane. 
 

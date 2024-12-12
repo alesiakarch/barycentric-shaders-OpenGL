@@ -2,7 +2,7 @@
 
 ASE Design Doc
 
-So i wanna make a standalone tool that makes NPR render of a custom model. 
+I want to make a standalone tool that makes NPR render of a custom model. 
 
 What does it need to do:
 
@@ -10,26 +10,30 @@ What does it need to do:
 2. Load myMesh, potentially by command line arguments, by passing in a model path/filename
 3. Process the shaders and apply the look to the model 
 
-That doesnt sound like a lot of functionality, so maybe I could add some Qt widgest for the texture control as a cherry on top. It should still process the textures based on define stylistic reference (which i dont know how to achieve) - barycentric shaders seem to clamp the values so they can have more colour options and not run into NANs, but I'm not sure how to map in onto the mesh if it's not it native texture.
+That doesn't sound like a lot of functionality, so maybe I could add some Qt widgets for the texture control as a cherry on top.
+It should still process the textures based on defined stylistic reference - barycentric shaders seem to clamp the values so they can have more colour options and not run into NANs, but I'm not sure how to map in onto the mesh if it's not it native texture.
 
-Jon has suggested writing the AOVs into textures and then projecting them on a view plane(?) after calculating the passes into a final image. This computation, I suppose, can the update every frame, keeping the scene interactive and allowing the user-inputed changes.
+Jon has suggested writing the AOVs into textures and then projecting them on a view plane(?) after calculating the passes into a final image. This computation, I suppose, can then update every frame, keeping the scene interactive and allowing the user-input changes.
 I can define separate functions for each pass and then combine them in the fragment shader for the final colour.
 
-Based on the 2016 Barycentric shaders paper, I know that any image can be used as reference image, but how the data is pulled from it? It is not a direct projection, otherwise the colour won't match. Does the B-spline somehow function calculate how to apply colour information from one image to another?
+Based on the 2016 Barycentric shaders paper, I know that any image can be used as a reference image, but how the data is pulled from it? It is not a direct projection, otherwise the colour won't match. (It appear that it is, if the reference isn't custom).
+Does the B-spline function somehow calculate how to apply colour information from one image to another? (Yes, it does)
 
-The passes get multiplied to get the overlay image, and the reference inmage is a weight image, to switch how much of what to apply. I need to somehow transfer the colour data though.
+The passes get multiplied to get the overlay image, and the reference image is a weight image, to switch how much of what to apply. I need to somehow transfer the colour data though.
 
-I can try building the sysyem for writing and calculating the passes first, and then start to actually play with the specific look I am trying to achieve. Might even start with a toon shader as a proof of concept. 
-The 2016 Charcoal rendering describes how they achieved the charcoal look on 3D images by using a set of control images that ran as textures. Those textures are uniform, representing flat shading options often made by the artist, and to me they seem to fix every object with an exact style configuration. 
-I could try implementing the charcoal shader, but ideally I would like to add colour to is as well, basically making a shader resempling pastel images. 
+I can try building the system for writing and calculating the passes first, and then start to actually play with the specific look I am trying to achieve. Might even start with a toon shader as a proof of concept. 
+The 2016 Charcoal rendering describes how they achieved the charcoal look on 3D images by using a set of control images that ran as textures.
+Those textures are uniform, representing flat shading options often made by the artist, and to me, they seem to fix every object with an exact style configuration. 
+I could try implementing the charcoal shader, but ideally, I would like to add colour to it as well, basically making a shader resembling pastel images. 
 
-Charcoal rendering pipeline order: 
+Charcoal rendering pipeline order (bottom to top): 
 1. base image
 2. shadow
 3. outlines
 4. mirror reflections
 5. specular
 
-In the end I will be essentially projecting a "comped" 2D image into a OpenGl viewer, by writing it out into texture. 
-I have talked with Jian and we explained that the control images are basically a mask on a 3D object, that is applied on the flat coloured image if desired.
-The control images are interpolatred using B-splines to termine at which uv coordinate to sample colour and how to mix it between the images if to mix it. This mask can be applied for each AOV and then combined into the final image as normal.
+In the end, I will be essentially projecting a "comped" 2D image into an OpenGl viewer, by writing it out into texture. 
+I have talked with Jian and we explained that the control images are basically a mask on a 3D object, that is applied on the flat-coloured image if desired.
+The control images are interpolated using B-splines to termine at which UV coordinate to sample colour and how to mix it between the images if to mix it at all. This mask can be applied for each AOV and then combined into the final image as normal.
+I need to run those weighted images through each of the AOV pass, and then combine all of the AOVs normally.

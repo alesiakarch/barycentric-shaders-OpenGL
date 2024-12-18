@@ -44,6 +44,7 @@ void NGLScene::initializeGL()
   glEnable(GL_MULTISAMPLE);
   m_view = ngl::lookAt({0, 20.0f, 20.0f}, {0, 0, 0}, {0, 1.0f, 0}); // AK sets the look at (eye pos, look at point pos, up axis)
   ngl::VAOPrimitives::createTrianglePlane("world_grid", 10, 10, 1, 1, ngl::Vec3::up()); // AK creates a grid
+  ngl::VAOPrimitives::loadObj("hand", "models/Hand_openglTest.obj"); // AK loads the bunny model
   ngl::ShaderLib::loadShader("BunnyShader", "shaders/VertexShader.glsl", "shaders/FragmentShader.glsl");
   startTimer(10); // AK
 }
@@ -68,13 +69,14 @@ void NGLScene::paintGL()
   mouseRotation.m_m[3][1] = m_modelPos.m_y; //AK
   mouseRotation.m_m[3][2] = m_modelPos.m_z; //AK
 
-  ngl::ShaderLib::use(ngl::nglColourShader);
+  ngl::ShaderLib::use(ngl::nglCheckerShader);
   ngl::ShaderLib::setUniform("MVP", m_cam * m_view * mouseRotation);
   ngl::VAOPrimitives::draw("world_grid"); // AK
 
   ngl::ShaderLib::use("BunnyShader");
   ngl::ShaderLib::setUniform("MVP", m_cam * m_view * mouseRotation);
-  ngl::VAOPrimitives::draw("bunny");
+  ngl::VAOPrimitives::draw("hand"); // AK
+  
 }
 
 //----------------------------------------------------------------------------------------------------------------------

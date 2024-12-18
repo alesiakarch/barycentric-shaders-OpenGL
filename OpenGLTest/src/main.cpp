@@ -40,6 +40,7 @@ int main()
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); // resises the window when the viewport is resized
 
+    //MyShader shader_custom("src/shaders/vertexShader.vs", "src/shaders/fragmentShader.fs", true); // create a shader object
     MyShader shader_custom("src/shaders/vertexShader.vs", "src/shaders/fragmentShader.fs", true); // create a shader object
 
     // provide vertex data, can be a file

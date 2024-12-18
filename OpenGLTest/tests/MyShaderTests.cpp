@@ -10,7 +10,7 @@
 // Helper function to create a temporary file with given content
 std::string createTempFile(const char* content) 
 {
-    std::string fileName = "/src/temp_shader_" + std::to_string(rand()) + ".glsl";
+    std::string fileName = "src/temp_shader_" + std::to_string(rand()) + ".glsl";
     std::ofstream outFile(fileName);
     outFile << content;
     outFile.close();

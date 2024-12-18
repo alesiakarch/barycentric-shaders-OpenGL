@@ -25,3 +25,9 @@ cd build
 cmake -DCMAKE_PREFIX_PATH=~/NGL ..
 make 
 ```
+
+// AK adding my project notes
+
+18/12/2024 added my own mesh in, has to be a triangulated .obj
+ maybe I should write a loader for the user to specify which mesh they want?  
+ improve the relative path so u can load shaders and meshes from terminal in build directory

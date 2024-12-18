@@ -14,6 +14,7 @@ MyShader::MyShader(const char* _vertexPath, const char* _fragmentPath, bool _isF
     std::string fragmentCode;
     const char* vShaderCode;
     const char* fShaderCode;
+    std::cout << "OpenGL version: " << glGetString(GL_VERSION);
 
     if (m_isFile)
     {

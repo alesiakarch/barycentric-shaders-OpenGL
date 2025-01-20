@@ -8,12 +8,12 @@
 #include <ngl/Util.h>
 #include <iostream>
 
-////// This code is Jon's boilerplate with some of my alterations (properly reference later)
+////// This code is Jon's boilerplate with of my alterations (properly reference later)
 
 NGLScene::NGLScene()
 {
   // re-size the widget to that of the parent (in this case the GLFrame passed in on construction)
-  setTitle("Blank NGL");
+  setTitle("NPRRendering NGL");
 }
 
 
@@ -43,10 +43,48 @@ void NGLScene::initializeGL()
   // enable multisampling for smoother drawing
   glEnable(GL_MULTISAMPLE);
   m_view = ngl::lookAt({0, 20.0f, 20.0f}, {0, 0, 0}, {0, 1.0f, 0}); // AK sets the look at (eye pos, look at point pos, up axis)
+
+  // making a shader program for the final render to screen
+  ngl::ShaderLib::createShaderProgram("FinalShader");
+  // create empty vert and frag for the program
+  ngl::ShaderLib::attachShader("FinalVertex", ngl::ShaderType::VERTEX);
+  ngl::ShaderLib::attachShader("FinalFragment", ngl::ShaderType::FRAGMENT);
+  // load the source code for the shaders
+  ngl::ShaderLib::loadShaderSource("FinalVertex", "../shaders/BackendVertex.glsl");
+  ngl::ShaderLib::loadShaderSource("FinalFragment", "../shaders/BackendFragment.glsl"); 
+  // compile the shaders
+  ngl::ShaderLib::compileShader("FinalVertex");
+  ngl::ShaderLib::compileShader("FinalFragment"); 
+  // attach the shaders to the program
+  ngl::ShaderLib::attachShaderToProgram("FinalShader", "FinalVertex");
+  ngl::ShaderLib::attachShaderToProgram("FinalShader", "FinalFragment");
+
+  ngl::ShaderLib::linkProgramObject("FinalShader");
+  ngl::ShaderLib::use("FinalShader"); // use the shader program
+  
+  ngl::ShaderLib::use(ngl::nglCheckerShader);
+  ngl::ShaderLib::setUniform("lightDiffuse", 1.0f, 1.0f, 1.0f, 1.0f);
+  ngl::ShaderLib::setUniform("checkOn", true);
+  ngl::ShaderLib::setUniform("lightPos", m_lightPos.toVec3());
+  ngl::ShaderLib::setUniform("colour1", 0.9f, 0.9f, 0.9f, 1.0f);
+  ngl::ShaderLib::setUniform("colour2", 0.6f, 0.6f, 0.6f, 1.0f);
+  ngl::ShaderLib::setUniform("checkSize", 60.0f);
+  ngl::ShaderLib::printRegisteredUniforms(ngl::nglCheckerShader);
+
+  // create custom texture to snapshot the fbo to
+  glGenTextures(1, &m_fbotexture); // create a name for the texture that will be rendered to
+  glBindTexture(GL_TEXTURE_2D, m_fbotexture); // bind the texture to the 2D texture target
+
+  // create fbo 
+  // switch fbos around in the paintGL 
+  // project the fbo texture onto the hand as the final shader
+  // calculate how the hand needs to look before the final shader (applied to a quad)
+  // have multiple shaders (diffuse, specular, etc) applied to the hand, then snapshoted to the fbo
+  // then multiplied into the final shader
   ngl::VAOPrimitives::createTrianglePlane("world_grid", 10, 10, 1, 1, ngl::Vec3::up()); // AK creates a grid
   ngl::VAOPrimitives::loadObj("hand", "../models/Hand_openglTest.obj"); // AK loads the bunny model
-  ngl::ShaderLib::loadShader("BunnyShader", "../shaders/VertexShader.glsl", "../shaders/FragmentShader.glsl");
-  startTimer(10); // AK
+  // ngl::ShaderLib::loadShader("BunnyShader", "../shaders/ExampleVertexShader.glsl", "../shaders/ExampleFragmentShader.glsl");
+  startTimer(10);  
 }
 
 void NGLScene::timerEvent(QTimerEvent *_event)
@@ -60,22 +98,22 @@ void NGLScene::paintGL()
 {
   // clear the screen and depth buffer
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glViewport(0,0,m_win.width,m_win.height);
+  glViewport(0,0, m_win.width, m_win.height);
 
-  auto rotX = ngl::Mat4::rotateX(m_win.spinXFace); //AK adds maya style controls
-  auto rotY = ngl::Mat4::rotateY(m_win.spinYFace); //AK
-  auto mouseRotation = rotX * rotY; // AK
-  mouseRotation.m_m[3][0] = m_modelPos.m_x; //AK
-  mouseRotation.m_m[3][1] = m_modelPos.m_y; //AK
-  mouseRotation.m_m[3][2] = m_modelPos.m_z; //AK
+  auto rotX = ngl::Mat4::rotateX(m_win.spinXFace); // adds maya style controls
+  auto rotY = ngl::Mat4::rotateY(m_win.spinYFace);
+  auto mouseRotation = rotX * rotY;
+  mouseRotation.m_m[3][0] = m_modelPos.m_x; 
+  mouseRotation.m_m[3][1] = m_modelPos.m_y; 
+  mouseRotation.m_m[3][2] = m_modelPos.m_z; 
 
   ngl::ShaderLib::use(ngl::nglCheckerShader);
   ngl::ShaderLib::setUniform("MVP", m_cam * m_view * mouseRotation);
-  ngl::VAOPrimitives::draw("world_grid"); // AK
+  ngl::VAOPrimitives::draw("world_grid"); 
 
-  ngl::ShaderLib::use("BunnyShader");
+  ngl::ShaderLib::use("FinalShader");
   ngl::ShaderLib::setUniform("MVP", m_cam * m_view * mouseRotation);
-  ngl::VAOPrimitives::draw("hand"); // AK
+  ngl::VAOPrimitives::draw("hand"); 
   
 }
 

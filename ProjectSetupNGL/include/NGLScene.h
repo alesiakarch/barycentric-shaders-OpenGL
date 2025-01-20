@@ -2,6 +2,7 @@
 #define NGLSCENE_H_
 #include <ngl/Vec3.h>
 #include <ngl/Mat4.h>
+#include <ngl/Vec4.h>
 #include "WindowParams.h"
 // this must be included after NGL includes else we get a clash with gl libs
 #include <QOpenGLWindow>
@@ -81,7 +82,10 @@ private:
     ngl::Vec3 m_modelPos;
     ngl::Mat4 m_cam; // AK stores camera values
     ngl::Mat4 m_view; // AK sets camera look at
+    ngl::Vec4 m_lightPos; // AK stores light position
     void timerEvent(QTimerEvent *_event) override;
+    // name for the fbo texture
+    GLuint m_fbotexture;
 
 
 

@@ -83,10 +83,20 @@ private:
     ngl::Mat4 m_cam; // AK stores camera values
     ngl::Mat4 m_view; // AK sets camera look at
     ngl::Vec4 m_lightPos; // AK stores light position
+    //----------------------------------------------------------------------------------------------------------------------
     void timerEvent(QTimerEvent *_event) override;
+    // create a framebuffer object with a texture
+    void setupFBO();
+    // create a quad for drawing the fbo
+    void makeQuad(); 
     // name for the fbo texture
     GLuint m_fbotexture;
-
+    // name for the fbo
+    GLuint m_fboID; 
+    // name for the loaded texture
+    GLuint m_textureName;
+    // the VAO for the quad
+    GLuint m_quad;
 
 
 };

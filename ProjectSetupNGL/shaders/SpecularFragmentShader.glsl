@@ -27,20 +27,16 @@ void main()
     //vec3 blended_tex = tex1 * baryCoords.x + tex2 * baryCoords.y + tex3 * baryCoords.z;
     vec3 blended_tex = texture(diffuseTexture1, uv).rgb; 
 
-    // ambient light
-    float ambientStrength = 0.3;
-    vec3 ambient = ambientStrength * vec3(1.0, 1.0, 1.0); // ambient light, strenght * light colour
-    
-
-   // diffuse light
-    vec3 norm = normalize(normal);
-    vec3 lightDir = normalize(lightPos - fragPos.xyz);
-    float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = diff * vec3(1.0, 1.0, 1.0); // diffuse light, strenght * light colour 
+    // specular
+    float specularStrength = 0.5;
+    vec3 viewDir = normalize(vec3(viewPos) - fragPos.xyz);
+    vec3 reflectDir = reflect(-lightDir, norm);  
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+    vec3 specular = specularStrength * spec * vec3(1.0, 1.0, 1.0);  
 
     vec3 diffuseResult = (ambient + diffuse) * blended_tex;
     
-    //finalColour = vec4(diffuseResult, 1.0);
-    //finalColour = vec4(baryCoords, 1.0); // rgb values of the barycentric coordinates
-    finalColour = texture(diffuseTexture1, uv); // just the texture
+    finalColour = vec4(diffuseResult, 1.0);
+    //finalColour = vec4(baryCoords, 1.0);
+    //finalColour = texture(diffuseTexture1, uv);
 }

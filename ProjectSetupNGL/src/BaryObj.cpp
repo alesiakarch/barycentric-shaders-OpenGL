@@ -1,522 +1,198 @@
-/*
-Copyright (C) 2009 Jon Macey
+#include <ngl/NGLStream.h>
+#include <ngl/VAOFactory.h>
+#include <ngl/SimpleVAO.h>
+#include <ngl/pystring.h>
+#include "BaryObj.h"
 
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
+namespace ps=pystring;
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
 
-  You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-//----------------------------------------------------------------------------------------------------------------------
-/// @file Obj.cpp
-/// @brief implementation files for Obj class
-//----------------------------------------------------------------------------------------------------------------------
-#include "Obj.h"
-#include "pystring.h"
-#include <cmath>
-#include <iostream>
-
-#if defined(WIN32)
-
-namespace std
+BaryObj::BaryObj(const std::string& _fname  , ngl::Obj::CalcBB _calcBB)  noexcept : ngl::Obj()
 {
-template < typename T >
-bool signbit(T t)
-{
-  return signbit(double(t));
-}
-} // namespace std
-
-#endif
-
-namespace ngl
-{
-
-namespace ps = pystring;
-
-Obj::Obj(std::string_view _fname, CalcBB _calcBB) noexcept
-  : AbstractMesh()
-{
-  if(!load(_fname, _calcBB) )
-  {
-    NGLMessage::addError(fmt::format("Error loading file {0} ", _fname.data()));
-    exit(EXIT_FAILURE);
-  }
-}
-
-Obj::Obj(std::string_view _fname, std::string_view _texName, CalcBB _calcBB) noexcept
-  : AbstractMesh()
-{
-  if(!load(_fname, _calcBB))
-  {
-    NGLMessage::addError(fmt::format("Error loading file {0} ", _fname.data()));
-    exit(EXIT_FAILURE);
-  }
-  // load texture
-  loadTexture(_texName);
-  m_texture = true;
-}
-
-void Obj::setTexture(std::string_view _texName)
-{
-  loadTexture(_texName);
-}
-
-Obj::Obj(const Obj &_c) noexcept
-{
-  m_verts = _c.m_verts;
-  m_norm = _c.m_norm;
-  m_uv = _c.m_uv;
-  m_face = _c.m_face;
-  m_center = _c.m_center;
-  m_vbo = false;
-  m_vao = false;
-  m_vboMapped = false;
-  m_texture = _c.m_texture;
-  m_textureID = _c.m_textureID;
-  m_maxX = _c.m_maxX;
-  m_minX = _c.m_minX;
-  m_maxY = _c.m_maxY;
-  m_minY = _c.m_minY;
-  m_maxZ = _c.m_maxZ;
-  m_minZ = _c.m_minZ;
-  m_loaded = true;
-  m_sphereCenter = _c.m_sphereCenter;
-  m_sphereRadius = _c.m_sphereRadius;
-}
-
-void Obj::addVertex(const ngl::Vec3 &_v) noexcept
-{
-  m_verts.push_back(_v);
-}
-void Obj::addNormal(const ngl::Vec3 &_v) noexcept
-{
-  m_norm.push_back(_v);
-}
-void Obj::addUV(const ngl::Vec2 &_v) noexcept
-{
-  ngl::Vec3 v(_v.m_x, _v.m_y, 0.0f);
-  m_uv.push_back(v);
-}
-void Obj::addUV(const ngl::Vec3 &_v) noexcept
-{
-  m_uv.push_back(_v);
-}
-
-void Obj::addFace(const ngl::Face &_f) noexcept
-{
-  m_face.push_back(_f);
-}
-
-bool Obj::save(std::string_view _fname) const noexcept
-{
-  std::ofstream out(_fname.data());
-  if(!out.is_open() )
-  {
-    NGLMessage::addError(fmt::format(" could not open file  {0} for writing ", _fname.data()));
-    return false;
-  }
-  // write out some comments
-  out << "# This file was created by ngl Obj exporter " << _fname.data() << '\n';
-  // write out the verts
-  for(auto v : m_verts)
-  {
-    out << "v " << v.m_x << " " << v.m_y << " " << v.m_z << '\n';
-  }
-
-  // write out the tex cords
-  for(auto v : m_uv)
-  {
-    out << "vt " << v.m_x << " " << v.m_y << '\n';
-  }
-  // write out the normals
-
-  for(auto v : m_norm)
-  {
-    out << "vn " << v.m_x << " " << v.m_y << " " << v.m_z << '\n';
-  }
-  // finally the faces
-  for(auto f : m_face)
-  {
-    out << "f ";
-    // we now have V/T/N for each to write out
-    for(unsigned int i = 0; i < f.m_vert.size(); ++i)
+  std::cout<<"BaryObj Constructor\n";
+  if ( load(_fname,_calcBB) == false)
     {
-      // don't forget that obj indices start from 1 not 0 (I did originally !)
-      out << f.m_vert[i] + 1;
-      if( ! m_uv.empty() )
-      {
-        out << '/';
-        out << f.m_uv[i] + 1;
-      }
-      if( ! m_norm.empty())
-      {
-        out << '/';
-        // weird case where we need to do f 1//1
-        if(m_uv.empty())
-        {
-          out << '/';
-        }
-        out << f.m_norm[i] + 1;
-        out << " ";
-      }
-      out << ' ';
+      ngl::NGLMessage::addError(fmt::format("Error loading file {0} ",_fname.data()));
+      exit(EXIT_FAILURE);
     }
-    out << '\n';
-  }
-  return true;
+
 }
 
-// function from https://stackoverflow.com/questions/6089231/getting-std-ifstream-to-handle-lf-cr-and-crlf
-// added after windows build broke NGL tests,
-std::istream &Obj::safeGetline(std::istream &is, std::string &t)
+
+
+bool BaryObj::parseVertex(std::vector<std::string> &_tokens) noexcept
 {
-  t.clear();
-
-  // The characters in the stream are read one-by-one using a std::streambuf.
-  // That is faster than reading them one-by-one using the std::istream.
-  // Code that uses streambuf this way must be guarded by a sentry object.
-  // The sentry object performs various tasks,
-  // such as thread synchronization and updating the stream state.
-
-  std::istream::sentry se(is, true);
-  std::streambuf *sb = is.rdbuf();
-
-  for(;;)
-  {
-    int c = sb->sbumpc();
-    switch(c)
-    {
-      case '\n':
-        return is;
-      case '\r':
-        if(sb->sgetc() == '\n')
-          sb->sbumpc();
-        return is;
-      case std::streambuf::traits_type::eof():
-        // Also handle the case when the last line has no line ending
-        if(t.empty())
-          is.setstate(std::ios::eofbit);
-        return is;
-      default:
-        t += static_cast< char >(c);
-    }
-  }
-}
-
-bool Obj::load(std::string_view _fname, CalcBB _calcBB) noexcept
-{
-  std::ifstream in(_fname.data());
-  if(!in.is_open() )
-  {
-    NGLMessage::addError(fmt::format(" file {0} not found  ", _fname.data()));
-    return false;
-  }
-
-  std::string str;
-  // Read the next line from File untill it reaches the end.
-  // while (std::getline(in, str))
-  while(!safeGetline(in, str).eof())
-  {
-    bool status = true;
-    // Line contains string of length > 0 then parse it
-    if(!str.empty())
-    {
-      std::vector< std::string > tokens;
-      ps::split(str, tokens);
-      if(tokens[0] == "v")
-      {
-        status = parseVertex(tokens);
-      }
-      else if(tokens[0] == "vn")
-      {
-        status = parseNormal(tokens);
-      }
-
-      else if(tokens[0] == "vt")
-      {
-        status = parseUV(tokens);
-      }
-      else if(tokens[0] == "f")
-      {
-        status = parseFace(tokens);
-      }
-    } // str.size()
-    // early out sanity checks!
-    if(!status )
-      return false;
-  } // while
-
-  in.close();
-  // Calculate the center of the object.
-  if(_calcBB == CalcBB::True)
-  {
-    this->calcDimensions();
-  }
-  m_isLoaded = true;
-  return true;
-}
-
-bool Obj::parseVertex(std::vector< std::string > &_tokens) noexcept
-{
-  bool parsedOK = true;
+  bool parsedOK=true;
   try
   {
-    float x = std::stof(_tokens[1]);
-    float y = std::stof(_tokens[2]);
-    float z = std::stof(_tokens[3]);
-    m_verts.push_back({x, y, z});
+    float x=std::stof(_tokens[1]);
+    float y=std::stof(_tokens[2]);
+    float z=std::stof(_tokens[3]);
+    // float vt1=std::stof(_tokens[4]);
+    // float vt2=std::stof(_tokens[5]);
+    // float vt3=std::stof(_tokens[6]);
+
+
+    m_verts.push_back({x,y,z});
+    //m_baryCords.push_back({vt1,vt2,vt3});
     ++m_currentVertexOffset;
   }
-  catch(std::invalid_argument &arg)
+  catch (std::invalid_argument)
   {
-    NGLMessage::addError("problem converting Obj file vertex ");
-    NGLMessage::addError(arg.what());
-    parsedOK = false;
+    ngl::NGLMessage::addError("problem converting Obj file vertex");
+    parsedOK=false;
   }
   return parsedOK;
 }
 
-bool Obj::parseNormal(std::vector< std::string > &_tokens) noexcept
+
+void BaryObj::createBaryVAO() noexcept
 {
-  bool parsedOK = true;
-  try
+
+  struct VertData
   {
-    float x = std::stof(_tokens[1]);
-    float y = std::stof(_tokens[2]);
-    float z = std::stof(_tokens[3]);
-    m_norm.push_back({x, y, z});
-    ++m_currentNormalOffset;
-  }
-  catch(std::invalid_argument &arg)
+    GLfloat x; // position from obj
+    GLfloat y;
+    GLfloat z;
+    GLfloat nx; // normal from obj mesh
+    GLfloat ny;
+    GLfloat nz;
+    GLfloat u; // tex cords
+    GLfloat v; // tex cords
+    GLfloat vt1; // barycentric cords
+    GLfloat vt2;
+    GLfloat vt3;
+  };
+
+  std::cout<<"Barycentric Obj Create VAO\n";
+  // if we have already created a VBO just return.
+  if(m_vao == true)
   {
-    NGLMessage::addError("problem converting Obj file normals");
-    NGLMessage::addError(arg.what());
-    parsedOK = false;
+    std::cout<<"VAO exist so returning\n";
+    return;
   }
-  return parsedOK;
+// else allocate space as build our VAO
+  m_dataPackType=0;
+  if(isTriangular())
+  {
+    m_dataPackType=GL_TRIANGLES;
+    std::cout <<"Doing Tri Data"<<std::endl;
+  }
+  // data is mixed of > quad so exit error
+  if(m_dataPackType == 0)
+  {
+    std::cerr<<"Can only create VBO from all Triangle or ALL Quad data at present"<<std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  // now we are going to process and pack the mesh into an ngl::VertexArrayObject
+  std::vector <VertData> vboMesh;
+  VertData d;
+
+
+  // loop for each of the faces
+  for(size_t i=0;i<m_face.size();++i)
+  {
+    // now for each triangle in the face (remember we ensured tri above)
+    for(size_t j=0;j<3;++j)
+    {
+
+      // pack in the vertex data first
+      d.x=m_verts[m_face[i].m_vert[j]].m_x;
+      d.y=m_verts[m_face[i].m_vert[j]].m_y;
+      d.z=m_verts[m_face[i].m_vert[j]].m_z;
+
+      // calculate the barycentric coordinates
+      if (j==0)
+      {
+        d.vt1=1;
+        d.vt2=0;
+        d.vt3=0;
+      }
+      else if(j==1)
+      {
+        d.vt1=0;
+        d.vt2=1;
+        d.vt3=0;
+      }
+      else if(j==2)
+      {
+        d.vt1=0;
+        d.vt2=0;
+        d.vt3=1;
+      }
+      //std::cout<<"Barycentric "<<d.vt1<<" "<<d.vt2<<" "<<d.vt3<<std::endl;
+      // now if we have norms of tex (possibly could not) pack them as well
+      if(m_norm.size() >0 && m_uv.size() > 0)
+      {
+        d.nx=m_norm[m_face[i].m_norm[j]].m_x;
+        d.ny=m_norm[m_face[i].m_norm[j]].m_y;
+        d.nz=m_norm[m_face[i].m_norm[j]].m_z;
+
+        d.u=m_uv[m_face[i].m_uv[j]].m_x;
+        d.v=m_uv[m_face[i].m_uv[j]].m_y;
+      }
+      // now if neither are present (only verts like Zbrush models)
+      else if(m_norm.size() ==0 &&  m_uv.size()==0)
+      {
+        d.nx=0;
+        d.ny=0;
+        d.nz=0;
+        d.u=0;
+        d.v=0;
+      }
+      // here we've got norms but not tex
+      else if(m_norm.size() >0 && m_uv.size()==0)
+      {
+        d.nx=m_norm[m_face[i].m_norm[j]].m_x;
+        d.ny=m_norm[m_face[i].m_norm[j]].m_y;
+        d.nz=m_norm[m_face[i].m_norm[j]].m_z;
+        d.u=0;
+        d.v=0;
+      }
+      // here we've got tex but not norm least common
+      else if(m_norm.size() ==0 && m_uv.size()>0)
+      {
+        d.nx=0;
+        d.ny=0;
+        d.nz=0;
+        d.u=m_uv[m_face[i].m_uv[j]].m_x;
+        d.v=m_uv[m_face[i].m_uv[j]].m_y;
+      }
+    vboMesh.push_back(d);
+    }
+  }
+
+  // first we grab an instance of our VOA
+  m_vaoMesh=ngl::VAOFactory::createVAO("simpleVAO",m_dataPackType);
+  // next we bind it so it's active for setting data
+  m_vaoMesh->bind();
+  m_meshSize=vboMesh.size();
+
+  // now we have our data add it to the VAO, we need to tell the VAO the following
+  // how much (in bytes) data we are copying
+  // a pointer to the first element of data (in this case the address of the first element of the
+  // std::vector
+  m_vaoMesh->setData(ngl::SimpleVAO::VertexData(m_meshSize*sizeof(VertData),vboMesh[0].x));
+  // so we need to set the vertexAttributePointer so the correct size and type as follows
+  m_vaoMesh->setVertexAttributePointer(0,3,GL_FLOAT,sizeof(VertData),0);
+  // uv same as above but starts at 0 and is attrib 1 and only u,v so 2
+  m_vaoMesh->setVertexAttributePointer(1,3,GL_FLOAT,sizeof(VertData),3);
+  // normal same as vertex only starts at position 2 (u,v)-> nx
+  m_vaoMesh->setVertexAttributePointer(2,2,GL_FLOAT,sizeof(VertData),6);
+  // set the colour
+  m_vaoMesh->setVertexAttributePointer(3,3,GL_FLOAT,sizeof(VertData),8);
+
+
+  // now we have set the vertex attributes we tell the VAO class how many indices to draw when
+  // glDrawArrays is called, in this case we use buffSize (but if we wished less of the sphere to be drawn we could
+  // specify less (in steps of 3))
+  m_vaoMesh->setNumIndices(m_meshSize);
+  // finally we have finished for now so time to unbind the VAO
+  m_vaoMesh->unbind();
+
+  // indicate we have a vao now
+  m_vao=true;
+
 }
 
-bool Obj::parseUV(std::vector< std::string > &_tokens) noexcept
-{
-  bool parsedOK = true;
-  try
-  {
-    auto z=0.0f;
-    auto x = std::stof(_tokens[1]);
-    auto y = std::stof(_tokens[2]);
-    if(_tokens.size() == 4)
-    {
-      z = std::stof(_tokens[3]);
-    }
-
-    m_uv.push_back({x, y, z});
-    ++m_currentUVOffset;
-  }
-  catch(std::invalid_argument &arg)
-  {
-    NGLMessage::addError("problem converting Obj file UV's");
-    NGLMessage::addError(arg.what());
-
-    parsedOK = false;
-  }
-  return parsedOK;
-}
-
-bool Obj::parseFace(std::vector< std::string > &_tokens) noexcept
-{
-  bool parsedOK = true;
-  // first let's find what sort of face we are dealing with
-  // I assume most likely case is all
-  if(ps::count(_tokens[1], "/") == 2 && ps::find(_tokens[1], "//") == -1)
-  {
-    parsedOK = parseFaceVertexNormalUV(_tokens);
-  }
-
-  else if(ps::find(_tokens[1], "/") == -1)
-  {
-    parsedOK = parseFaceVertex(_tokens);
-  }
-  // look for VertNormal
-  else if(ps::find(_tokens[1], "//") != -1)
-  {
-    parsedOK = parseFaceVertexNormal(_tokens);
-  }
-  // if we have 1 / it is a VertUV format
-  else if(ps::count(_tokens[1], "/") == 1)
-  {
-    parsedOK = parseFaceVertexUV(_tokens);
-  }
-
-  return parsedOK;
-}
-// f v v v v
-bool Obj::parseFaceVertex(std::vector< std::string > &_tokens) noexcept
-{
-  bool parsedOK = true;
-  ngl::Face f;
-  // token still starts with f so skip
-  for(size_t i = 1; i < _tokens.size(); ++i)
-  {
-    try
-    {
-      // note we need to subtract one from the list
-      int idx = std::stoi(_tokens[i]) - 1;
-      // check if we are a negative index
-      if(std::signbit(idx))
-      {
-        // note we index from 0 not 1 like obj so adjust
-        idx = m_currentVertexOffset + (idx + 1);
-      }
-      f.m_vert.push_back(static_cast< uint32_t >(idx));
-    }
-    catch(std::invalid_argument &arg)
-    {
-      NGLMessage::addError("problem converting Obj file face");
-      NGLMessage::addError(arg.what());
-      parsedOK = false;
-    }
-  }
-  m_face.push_back(f);
-  return parsedOK;
-}
-// f v//vn v//vn v//vn v//vn
-bool Obj::parseFaceVertexNormal(std::vector< std::string > &_tokens) noexcept
-{
-  bool parsedOK = true;
-  ngl::Face f;
-  // token still starts with f so skip
-  for(size_t i = 1; i < _tokens.size(); ++i)
-  {
-    std::vector< std::string > vn;
-    ps::split(_tokens[i], vn, "//");
-    try
-    {
-      // note we need to subtract one from the list
-      int idx = std::stoi(vn[0]) - 1;
-      // check if we are a negative index
-      if(std::signbit(idx))
-      {
-        // note we index from 0 not 1 like obj so adjust
-        idx = m_currentVertexOffset + (idx + 1);
-      }
-      f.m_vert.push_back(static_cast< uint32_t >(idx));
-      idx = std::stoi(vn[1]) - 1;
-      // check if we are a negative index
-      if(std::signbit(idx))
-      {
-        // note we index from 0 not 1 like obj so adjust
-        idx = m_currentNormalOffset + (idx + 1);
-      }
-      f.m_norm.push_back(static_cast< uint32_t >(idx));
-    }
-    catch(std::invalid_argument &arg)
-    {
-      NGLMessage::addError("problem converting Obj file face");
-      NGLMessage::addError(arg.what());
-      parsedOK = false;
-    }
-  }
-  m_face.push_back(f);
-  return parsedOK;
-}
-// f v/vt v/vt v/vt v/vt
-bool Obj::parseFaceVertexUV(std::vector< std::string > &_tokens) noexcept
-{
-  bool parsedOK = true;
-  ngl::Face f;
-  // token still starts with f so skip
-  for(size_t i = 1; i < _tokens.size(); ++i)
-  {
-    std::vector< std::string > vn;
-    ps::split(_tokens[i], vn, "/");
-    try
-    {
-      // note we need to subtract one from the list
-      int idx = std::stoi(vn[0]) - 1;
-      // check if we are a negative index
-      if(std::signbit(idx))
-      {
-        // note we index from 0 not 1 like obj so adjust
-        idx = m_currentVertexOffset + (idx + 1);
-      }
-      f.m_vert.push_back(static_cast< uint32_t >(idx));
-      idx = std::stoi(vn[1]) - 1;
-      // check if we are a negative index
-      if(std::signbit(idx))
-      {
-        // note we index from 0 not 1 like obj so adjust
-        idx = m_currentUVOffset + (idx + 1);
-      }
-      f.m_uv.push_back(static_cast< uint32_t >(idx));
-    }
-    catch(std::invalid_argument &arg)
-    {
-      NGLMessage::addError("problem converting Obj file face");
-      NGLMessage::addError(arg.what());
-      parsedOK = false;
-    }
-  }
-  m_face.push_back(f);
-  return parsedOK;
-}
-// f v/vt/vn v/vt/vn v/vt/vn v/vt/vn
-bool Obj::parseFaceVertexNormalUV(std::vector< std::string > &_tokens) noexcept
-{
-  bool parsedOK = true;
-  ngl::Face f;
-  // token still starts with f so skip
-  for(size_t i = 1; i < _tokens.size(); ++i)
-  {
-    std::vector< std::string > vn;
-    ps::split(_tokens[i], vn, "/");
-    try
-    {
-      // note we need to subtract one from the list
-      int idx = std::stoi(vn[0]) - 1;
-      // check if we are a negative index
-      if(std::signbit(idx))
-      {
-        // note we index from 0 not 1 like obj so adjust
-        idx = m_currentVertexOffset + (idx + 1);
-      }
-      f.m_vert.push_back(static_cast< uint32_t >(idx));
-
-      idx = std::stoi(vn[1]) - 1;
-      // check if we are a negative index
-      if(std::signbit(idx))
-      {
-        // note we index from 0 not 1 like obj so adjust
-        idx = m_currentUVOffset + (idx + 1);
-      }
-      f.m_uv.push_back(static_cast< uint32_t >(idx));
-
-      idx = std::stoi(vn[2]) - 1;
-      // check if we are a negative index
-      if(std::signbit(idx))
-      {
-        // note we index from 0 not 1 like obj so adjust
-        idx = m_currentNormalOffset + (idx + 1);
-      }
-      f.m_norm.push_back(static_cast< uint32_t >(idx));
-    }
-    catch(std::invalid_argument &arg)
-    {
-      NGLMessage::addError("problem converting Obj file face");
-      NGLMessage::addError(arg.what());
-      parsedOK = false;
-    }
-  }
-  m_face.push_back(f);
-  return parsedOK;
-}
-
-} // namespace ngl

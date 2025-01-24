@@ -100,13 +100,15 @@ private:
     void renderToFBO();
     // create a quad for drawing the fbo
     GLuint m_quad;
-    void makeQuad(); 
+    GLuint makeQuad(); 
     // name for the fbo texture
     GLuint m_fbotexture;
     GLuint m_fbotexture2;
+    GLuint m_fbotexture3;
     // name for the fbo
     GLuint m_fboID; 
     GLuint m_fboID2;
+    GLuint m_fboID3;
     // name for the loaded textures
     GLuint m_textureName;
     GLuint m_controltexture1;

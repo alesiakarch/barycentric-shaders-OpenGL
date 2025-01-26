@@ -1,7 +1,9 @@
 #ifndef NGLSCENE_H_
 #define NGLSCENE_H_
+#include <BaryObj.h>
 #include <ngl/Vec3.h>
 #include <ngl/Mat4.h>
+#include <ngl/Vec4.h>
 #include "WindowParams.h"
 // this must be included after NGL includes else we get a clash with gl libs
 #include <QOpenGLWindow>
@@ -44,8 +46,16 @@ class NGLScene : public QOpenGLWindow
     //----------------------------------------------------------------------------------------------------------------------
     void resizeGL(int _w, int _h) override;
 
+    struct FBO {
+        GLuint fboId;
+        GLuint fboTexture;
+        GLuint fboDepth;
+    };
+    FBO createFBO(int _width, int _height);
+
 private:
 
+    std::unique_ptr<BaryObj> m_mesh;
     //----------------------------------------------------------------------------------------------------------------------
     /// @brief Qt Event called when a key is pressed
     /// @param [in] _event the Qt event to query for size etc
@@ -79,9 +89,41 @@ private:
     WinParams m_win;
     /// position for our model
     ngl::Vec3 m_modelPos;
+    ngl::Vec3 m_eyePos;
     ngl::Mat4 m_cam; // AK stores camera values
     ngl::Mat4 m_view; // AK sets camera look at
+    // AK stores light position
+    ngl::Vec3 m_lightPos={0.0f,1.0f,0.0f};
+    //----------------------------------------------------------------------------------------------------------------------
     void timerEvent(QTimerEvent *_event) override;
+    // create a framebuffer object with a texture
+   
+    void setupFBO();
+    void renderToFBO();
+    // create a quad for drawing the fbo
+    GLuint m_quad;
+    GLuint makeQuad(); 
+    // name for the fbo texture
+    GLuint m_fbotexture;
+    GLuint m_fbotexture2;
+    GLuint m_fbotexture3;
+    // name for the fbo
+    GLuint m_fboID; 
+    GLuint m_fboID2;
+    GLuint m_fboID3;
+    // name for the loaded textures
+    GLuint m_textureName;
+    GLuint m_controltexture1;
+    GLuint m_controltexture2;
+    GLuint m_controltexture3;
+    GLuint m_controltexture4;
+    GLuint m_controltexture5;
+    GLuint m_controltexture6;
+    GLuint m_controltexture7;
+    GLuint m_controltexture8;
+    GLuint m_controltexture9;
+    // the VAO for the quad
+    
 
 
 

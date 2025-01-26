@@ -6,7 +6,7 @@ layout(location = 0) out vec4 finalColour;
 in vec3 normal;
 in vec2 uv;
 in vec3 baryCoords;
-in vec4 fragPos;
+in vec3 fragPos;
 
 // texture maps that are going to be blended
 uniform sampler2D ShadowTexture1;

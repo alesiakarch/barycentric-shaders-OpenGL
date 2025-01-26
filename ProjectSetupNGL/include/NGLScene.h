@@ -89,9 +89,11 @@ private:
     WinParams m_win;
     /// position for our model
     ngl::Vec3 m_modelPos;
+    ngl::Vec3 m_eyePos;
     ngl::Mat4 m_cam; // AK stores camera values
     ngl::Mat4 m_view; // AK sets camera look at
-    ngl::Vec4 m_lightPos; // AK stores light position
+    // AK stores light position
+    ngl::Vec3 m_lightPos={0.0f,1.0f,0.0f};
     //----------------------------------------------------------------------------------------------------------------------
     void timerEvent(QTimerEvent *_event) override;
     // create a framebuffer object with a texture

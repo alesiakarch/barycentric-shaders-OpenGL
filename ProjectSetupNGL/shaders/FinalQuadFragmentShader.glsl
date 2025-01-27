@@ -21,7 +21,6 @@ uniform sampler2D outlineTexture;
 void main()
 {
     //finalColour = texture(UVTexture, uv);
-    vec2 uv = gl_FragCoord.xy / vec2(1024, 1024); // get the uv coordinates
     // trying to blend diffuse with shadow
     vec2 meshUV = clamp(texture(UVTexture, uv), 0.0, 1.0).rg; // get the uv coordinates
 
@@ -42,7 +41,7 @@ void main()
     ww /= totalWeight;
 
     vec3 blendtex = tex1 * wx + tex2 * wy + tex3 * wz + tex4 * ww; // blending the textures
-    //finalColour = vec4(blendtex, 1.0);
+    finalColour = vec4(blendtex, 1.0);
 
-    finalColour = vec4(tex1, 1.0);
+    //finalColour = vec4(tex1, 1.0);
 }

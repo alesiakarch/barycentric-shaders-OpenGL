@@ -131,6 +131,7 @@ void NGLScene::initializeGL()
   FBO fboShadow = createFBO(m_win.width, m_win.height);
   FBO fboSpecular = createFBO(m_win.width, m_win.height);
   FBO fboOutline = createFBO(m_win.width, m_win.height);
+  FBO fboUV = createFBO(m_win.width, m_win.height);
 
   m_fboID = fboDiffuse.fboId;
   m_fbotexture = fboDiffuse.fboTexture; 
@@ -140,37 +141,9 @@ void NGLScene::initializeGL()
   m_fbotexture3 = fboSpecular.fboTexture;
   m_fboID4 = fboOutline.fboId;
   m_fbotexture4 = fboOutline.fboTexture;
-
-  glGenFramebuffers(1, &m_fboID5);    // Generate FBO
-  glBindFramebuffer(GL_FRAMEBUFFER, m_fboID5);
-
-  // Create a colour texture
-  glGenTextures(1, &m_fbotexture5);
-  glBindTexture(GL_TEXTURE_2D, m_fbotexture5);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1024, 1024, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);  
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_fbotexture5, 0);
-
-  // Create the render buffer for depth and stencil
-  GLuint rboID;
-  glGenRenderbuffers(1, &rboID);
-  glBindRenderbuffer(GL_RENDERBUFFER, rboID);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1024, 1024);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rboID);
-
-  // Check if the FBO is complete
-  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-  {
-    std::cerr << "Framebuffer is not complete!" << std::endl;
-  }
-
-  // Unbind FBO
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glBindTexture(GL_TEXTURE_2D, 0);
-
+  m_fboID5 = fboUV.fboId;
+  m_fbotexture5 = fboUV.fboTexture;
+  
   // make screen quad
   m_quad = makeQuad();
 
@@ -304,7 +277,7 @@ void NGLScene::paintGL()
   glBindTexture(GL_TEXTURE_2D, m_fbotexture4);
   ngl::ShaderLib::setUniform("OutlineWeight", 4);
   glActiveTexture(GL_TEXTURE5);
-  glBindTexture(GL_TEXTURE_2D, m_textureName);
+  glBindTexture(GL_TEXTURE_2D, m_controltexture5);
   ngl::ShaderLib::setUniform("diffuseTexture", 5);
   glActiveTexture(GL_TEXTURE6);
   glBindTexture(GL_TEXTURE_2D, m_controltexture2);

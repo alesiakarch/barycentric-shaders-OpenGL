@@ -14,6 +14,11 @@ uniform vec3 viewPos;
 // calculate the light over the final maps?
 void main()
 {   
-    float outline = 0.0;
-    finalColour = vec4(0.0, 0.0, 0.0, outline);
+    vec3 lightDir = normalize(lightPos - fragPos);
+    float lightIntensity = max(dot(lightDir, normal), 0.0);
+    float outline = abs(normal.x) + abs(normal.y) + abs(normal.z);; // edge detection
+    float thinkness = 0.1 + (1.0 - lightIntensity) * 0.5;
+
+    float outlineMask = outline * thinkness;
+    finalColour = vec4(0.0, 0.0, 0.0, outlineMask);
 }

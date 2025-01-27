@@ -11,13 +11,11 @@ out vec3 normal;
 out vec2 uv;
 out vec3 fragPos;
 
+// processing the mesh data to be used in the parameters shaders
 void main()
 {
     gl_Position = MVP * vec4(vertPos,1.0);
     uv = vertUV; 
     fragPos = vec3(modelMat * vec4(vertPos, 1.0));
     normal = normalize(mat3(transpose(inverse(modelMat))) * vertNormal); // tranfsormed from object space to world space
-
-    // weight = vec4(lightIntensity, 1 - lightIntensity, fresnel, spec); // how much light is on the fragment, assuming 2 textures
-    //                                                              // and satifying partition of unity
 }

@@ -2,21 +2,19 @@
 
 layout(location = 0) out vec4 finalColour;
 
-
 in vec3 normal;
 in vec2 uv;
 in vec3 fragPos;
 
-// texture maps that are going to be blended
 uniform vec3 lightPos;
 
-
-// calculate the light over the final maps?
+// uses inverted light intensity to calculate the shadow
 void main()
 {   
     vec3 lightDir = normalize(lightPos - fragPos);  
-    float lightIntensity = max(dot(lightDir, normal), 0.0); // calculate how the normals align with the light
+    float lightIntensity = max(dot(lightDir, normal), 0.0); 
 
+    // shadow weight to pass down to quad shader
     finalColour = vec4(0.0, 1 - lightIntensity, 0.0, 1.0);
 
 }

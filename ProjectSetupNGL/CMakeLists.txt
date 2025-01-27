@@ -44,8 +44,6 @@ target_sources(${TargetName} PRIVATE ${PROJECT_SOURCE_DIR}/src/main.cpp
 			${PROJECT_SOURCE_DIR}/src/NGLScene.cpp  
 			${PROJECT_SOURCE_DIR}/src/NGLSceneMouseControls.cpp  
 			${PROJECT_SOURCE_DIR}/include/NGLScene.h  
-            ${PROJECT_SOURCE_DIR}/include/BaryObj.h
-            ${PROJECT_SOURCE_DIR}/src/BaryObj.cpp
 )
 
 target_link_libraries(${TargetName} PRIVATE Qt::Widgets Qt::OpenGL NGL)

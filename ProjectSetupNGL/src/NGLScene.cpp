@@ -15,16 +15,28 @@
 NGLScene::NGLScene()
 {
   // re-size the widget to that of the parent (in this case the GLFrame passed in on construction)
-  setTitle("NPRRendering 5 Shaders");
+  setTitle("NPR Charcoal Rendering");
 }
-
 
 NGLScene::~NGLScene()
 {
-  std::cout<<"Shutting down NGL, removing VAO's and Shaders\n";
-  //glDeleteTextures(1, &m_textureID); // change names
-  //glDeleteFramebuffers(1, &m_fboID);
+  std::cout<<"Shutting down NGL, removing VAO's, Shaders, FBOs and Textures\n";
+  GLuint fbos[] = {m_fboID1, m_fboID2, m_fboID3, m_fboID4, m_fboID5};
+  GLuint textures[] = {m_fbotexture1, m_fbotexture2, m_fbotexture3, m_fbotexture4, m_fbotexture5,
+                       m_controltexture1, m_controltexture2, m_controltexture3, m_controltexture4,
+                       m_controltexture5, m_controltexture6, m_controltexture7, m_controltexture8, m_controltexture9};  
+  glDeleteFramebuffers(5, fbos);
+  glDeleteTextures(14, textures);
 }
+
+void NGLScene::resizeGL(int _w , int _h)
+{
+  m_win.width  = static_cast<int>( _w * devicePixelRatio() );
+  m_win.height = static_cast<int>( _h * devicePixelRatio() );
+  m_cam = ngl::perspective(45.0f, float(_w)/float(_h), 0.01f, 200.0f); // defines camera and aspect ratio
+}
+
+//----------------------------------------------------------------------------------------------------------------------
 
 NGLScene::FBO NGLScene::createFBO(int width, int height) {
     FBO fbo;
@@ -50,7 +62,11 @@ NGLScene::FBO NGLScene::createFBO(int width, int height) {
     // Check if the FBO is complete
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
-      std::cerr << "Framebuffer is not complete!" << std::endl;
+      ngl::NGLMessage::addError("Framebuffer is not complete!");
+    }
+    else
+    {
+      ngl::NGLMessage::addMessage("Created FBO with ID: " + std::to_string(fbo.fboId));
     }
 
     // Unbind FBO
@@ -60,13 +76,7 @@ NGLScene::FBO NGLScene::createFBO(int width, int height) {
     return fbo;
 }
 
-void NGLScene::resizeGL(int _w , int _h)
-{
-  m_win.width  = static_cast<int>( _w * devicePixelRatio() );
-  m_win.height = static_cast<int>( _h * devicePixelRatio() );
-  m_cam = ngl::perspective(45.0f, float(_w)/float(_h), 0.01f, 200.0f); // defines camera and aspect ratio
-}
-
+//----------------------------------------------------------------------------------------------------------------------
 
 void NGLScene::initializeGL()
 {
@@ -79,9 +89,10 @@ void NGLScene::initializeGL()
   // enable multisampling for smoother drawing
   glEnable(GL_MULTISAMPLE);
 
-  m_view = ngl::lookAt({0, 20.0f, 20.0f}, {0, 0, 0}, {0, 1.0f, 0}); // AK sets the look at (eye pos, look at point pos, up axis)
-  m_eyePos = ngl::Vec3(0, 20.0f, 20.0f); // AK sets the eye position
-  // making a shader program for the final render to screen
+  m_eyePos = ngl::Vec3(0, 20.0f, 20.0f); // sets the eye position
+  m_view = ngl::lookAt(m_eyePos, {0, 0, 0}, {0, 1.0f, 0}); // sets the look at (eye pos, look at point pos, up axis)
+ 
+  // loading shaders for each pass
   ngl::ShaderLib::loadShader("DiffuseShader", "../shaders/MeshVertexShader.glsl", "../shaders/DiffuseFragmentShader.glsl");
   ngl::ShaderLib::use("DiffuseShader");
 
@@ -98,27 +109,16 @@ void NGLScene::initializeGL()
   ngl::ShaderLib::use("UVShader");
 
   // load control images
-  ngl::Texture controltexture1("../textures/control_image1.png");
-  m_controltexture1 = controltexture1.setTextureGL();
-  ngl::Texture controltexture2("../textures/control_image2.png");
-  m_controltexture2 = controltexture2.setTextureGL();
-  ngl::Texture controltexture3("../textures/control_image3.png");
-  m_controltexture3 = controltexture3.setTextureGL();
-  ngl::Texture controltexture4("../textures/control_image4.png");
-  m_controltexture4 = controltexture4.setTextureGL();
-  ngl::Texture controltexture5("../textures/control_image5.png");
-  m_controltexture5 = controltexture5.setTextureGL();
-  ngl::Texture controltexture6("../textures/control_image6.png");
-  m_controltexture6 = controltexture6.setTextureGL();
-  ngl::Texture controltexture7("../textures/control_image7.png");
-  m_controltexture7 = controltexture7.setTextureGL();
-  ngl::Texture controltexture8("../textures/control_image8.png");
-  m_controltexture8 = controltexture8.setTextureGL();
-  ngl::Texture controltexture9("../textures/control_image9.png");
-  m_controltexture9 = controltexture9.setTextureGL();
+  m_controltexture1 = loadTexture("../textures/control_image1.png");
+  m_controltexture2 = loadTexture("../textures/control_image2.png");
+  m_controltexture3 = loadTexture("../textures/control_image3.png");
+  m_controltexture4 = loadTexture("../textures/control_image4.png");
+  m_controltexture5 = loadTexture("../textures/control_image5.png");
+  m_controltexture6 = loadTexture("../textures/control_image6.png");
+  m_controltexture7 = loadTexture("../textures/control_image7.png");
+  m_controltexture8 = loadTexture("../textures/control_image8.png");
+  m_controltexture9 = loadTexture("../textures/control_image9.png");
   
-  ngl::Texture testTexture("../textures/testTexture.png");
-  m_textureName = testTexture.setTextureGL();
   // load shader for a light cube
   ngl::ShaderLib::use(ngl::nglColourShader);
   ngl::ShaderLib::setUniform("Colour", 1.0f, 1.0f, 1.0f, 1.0f);
@@ -127,35 +127,30 @@ void NGLScene::initializeGL()
   ngl::ShaderLib::loadShader("QuadShader", "../shaders/QuadVertexShader.glsl", "../shaders/FinalQuadFragmentShader.glsl");
   ngl::ShaderLib::use("QuadShader");
 
-  // create a framebuffer object for each pass
+  // create a FBOs for each pass
   FBO fboDiffuse = createFBO(m_win.width, m_win.height);
   FBO fboShadow = createFBO(m_win.width, m_win.height);
   FBO fboSpecular = createFBO(m_win.width, m_win.height);
   FBO fboOutline = createFBO(m_win.width, m_win.height);
   FBO fboUV = createFBO(m_win.width, m_win.height);
-
-  m_fboID = fboDiffuse.fboId;
-  m_fbotexture = fboDiffuse.fboTexture; 
-  m_fboID2 = fboShadow.fboId;
-  m_fbotexture2 = fboShadow.fboTexture;
-  m_fboID3 = fboSpecular.fboId;
-  m_fbotexture3 = fboSpecular.fboTexture;
-  m_fboID4 = fboOutline.fboId;
-  m_fbotexture4 = fboOutline.fboTexture;
-  m_fboID5 = fboUV.fboId;
-  m_fbotexture5 = fboUV.fboTexture;
+  
+  m_fboID1 = fboUV.fboId;
+  m_fbotexture1 = fboUV.fboTexture;
+  m_fboID2 = fboDiffuse.fboId;
+  m_fbotexture2 = fboDiffuse.fboTexture; 
+  m_fboID3 = fboShadow.fboId;
+  m_fbotexture3 = fboShadow.fboTexture;
+  m_fboID4 = fboSpecular.fboId;
+  m_fbotexture4 = fboSpecular.fboTexture;
+  m_fboID5 = fboOutline.fboId;
+  m_fbotexture5 = fboOutline.fboTexture;
+  
 
   // make screen quad
   m_quad = makeQuad();
 
-  ngl::VAOPrimitives::createTrianglePlane("world_grid", 10, 10, 1, 1, ngl::Vec3::up()); // AK creates a grid
-
-  m_mesh.reset(new BaryObj("../models/Hand.obj"));
-  std::cout<<"Loaded Mesh\n";
-
-  // now we need to create this as a VAO so we can draw it
-  m_mesh->createBaryVAO();
-  std::cout<<"Created VAO\n";
+  // load the mesh
+  ngl::VAOPrimitives::loadObj("hand", "../models/Hand.obj");
 
   startTimer(10);  
 }
@@ -169,7 +164,8 @@ void NGLScene::timerEvent(QTimerEvent *_event)
 
 void NGLScene::paintGL()
 { 
-  auto rotX = ngl::Mat4::rotateX(m_win.spinXFace); // adds maya style controls
+  // add maya style controls
+  auto rotX = ngl::Mat4::rotateX(m_win.spinXFace); 
   auto rotY = ngl::Mat4::rotateY(m_win.spinYFace);
   auto mouseRotation = rotX * rotY;
   mouseRotation.m_m[3][0] = m_modelPos.m_x; 
@@ -177,19 +173,18 @@ void NGLScene::paintGL()
   mouseRotation.m_m[3][2] = m_modelPos.m_z; 
 
   // connect the UV FBO
-  glBindFramebuffer(GL_FRAMEBUFFER, m_fboID5);
+  glBindFramebuffer(GL_FRAMEBUFFER, m_fboID1);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glViewport(0,0, m_win.width, m_win.height);
   
   ngl::ShaderLib::use("UVShader");
   ngl::ShaderLib::setUniform("MVP", m_cam * m_view * mouseRotation); 
-  m_mesh->draw();
+  ngl::VAOPrimitives::draw("hand");
 
   // connect the diffuse FBO
-  glBindFramebuffer(GL_FRAMEBUFFER, m_fboID);
+  glBindFramebuffer(GL_FRAMEBUFFER, m_fboID2);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glViewport(0,0, m_win.width, m_win.height);
-
  
   // draw light
   ngl::ShaderLib::use(ngl::nglColourShader);
@@ -197,38 +192,27 @@ void NGLScene::paintGL()
   tx.setPosition(m_lightPos);
   tx.setScale(1.0f, 1.0f, 1.0f);
   ngl::ShaderLib::setUniform("MVP", m_cam * m_view * tx.getMatrix()* mouseRotation);
-  ngl::ShaderLib::setUniform("lightPos",m_lightPos);
   ngl::VAOPrimitives::draw("cube");
 
   ngl::ShaderLib::use("DiffuseShader");
   ngl::ShaderLib::setUniform("MVP", m_cam * m_view * mouseRotation);
     ngl::ShaderLib::setUniform("modelMat", mouseRotation); //modelMat for the vertex shader
   ngl::ShaderLib::setUniform("lightPos", m_lightPos);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, m_controltexture5);
-  ngl::ShaderLib::setUniform("diffuseTexture1", 0);
-  glActiveTexture(GL_TEXTURE1);
-  glBindTexture(GL_TEXTURE_2D, m_controltexture1);
-  ngl::ShaderLib::setUniform("diffuseTexture2", 1);
-  glActiveTexture(GL_TEXTURE2);
-  glBindTexture(GL_TEXTURE_2D, m_controltexture9);
-  ngl::ShaderLib::setUniform("diffuseTexture3", 2);
-  m_mesh->draw();
-
+  ngl::VAOPrimitives::draw("hand"); 
 
   // connect the shadow FBO
-  glBindFramebuffer(GL_FRAMEBUFFER, m_fboID2);
+  glBindFramebuffer(GL_FRAMEBUFFER, m_fboID3);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glViewport(0,0, m_win.width, m_win.height);
   
   ngl::ShaderLib::use("ShadowShader");
   ngl::ShaderLib::setUniform("MVP", m_cam * m_view * mouseRotation);
-    ngl::ShaderLib::setUniform("modelMat", mouseRotation); // modelMat for the vertex shader
+  ngl::ShaderLib::setUniform("modelMat", mouseRotation); // modelMat for the vertex shader
   ngl::ShaderLib::setUniform("lightPos", m_lightPos);
-  m_mesh->draw();
+  ngl::VAOPrimitives::draw("hand"); 
 
   // connect the specular FBO
-  glBindFramebuffer(GL_FRAMEBUFFER, m_fboID3);
+  glBindFramebuffer(GL_FRAMEBUFFER, m_fboID4);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glViewport(0,0, m_win.width, m_win.height);
   
@@ -237,10 +221,10 @@ void NGLScene::paintGL()
   ngl::ShaderLib::setUniform("modelMat", mouseRotation); // modelMat for the vertex shader
   ngl::ShaderLib::setUniform("lightPos", m_lightPos);
   ngl::ShaderLib::setUniform("viewPos", m_eyePos);
-  m_mesh->draw();
+  ngl::VAOPrimitives::draw("hand"); 
 
   // connect the outline FBO
-  glBindFramebuffer(GL_FRAMEBUFFER, m_fboID4);
+  glBindFramebuffer(GL_FRAMEBUFFER, m_fboID5);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glViewport(0,0, m_win.width, m_win.height);
   
@@ -248,10 +232,7 @@ void NGLScene::paintGL()
   ngl::ShaderLib::setUniform("MVP", m_cam * m_view * mouseRotation);
   ngl::ShaderLib::setUniform("modelMat", mouseRotation); // modelMat for the vertex shader
   ngl::ShaderLib::setUniform("lightPos", m_lightPos);
-  ngl::ShaderLib::setUniform("viewPos", m_eyePos);
-  m_mesh->draw();
-
-
+  ngl::VAOPrimitives::draw("hand"); 
 
   // default framebuffer draw quad
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -261,19 +242,19 @@ void NGLScene::paintGL()
   ngl::ShaderLib::use("QuadShader");
   glBindVertexArray(m_quad);
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, m_fbotexture5);
+  glBindTexture(GL_TEXTURE_2D, m_fbotexture1);
   ngl::ShaderLib::setUniform("UVTexture", 0);
   glActiveTexture(GL_TEXTURE1);
-  glBindTexture(GL_TEXTURE_2D, m_fbotexture);
+  glBindTexture(GL_TEXTURE_2D, m_fbotexture2);
   ngl::ShaderLib::setUniform("DiffuseWeight", 1);
   glActiveTexture(GL_TEXTURE2);
-  glBindTexture(GL_TEXTURE_2D, m_fbotexture2);
+  glBindTexture(GL_TEXTURE_2D, m_fbotexture3);
   ngl::ShaderLib::setUniform("ShadowWeight", 2);
   glActiveTexture(GL_TEXTURE3);
-  glBindTexture(GL_TEXTURE_2D, m_fbotexture3);
+  glBindTexture(GL_TEXTURE_2D, m_fbotexture4);
   ngl::ShaderLib::setUniform("SpecularWeight", 3);
   glActiveTexture(GL_TEXTURE4);
-  glBindTexture(GL_TEXTURE_2D, m_fbotexture4);
+  glBindTexture(GL_TEXTURE_2D, m_fbotexture5);
   ngl::ShaderLib::setUniform("OutlineWeight", 4);
   glActiveTexture(GL_TEXTURE5);
   glBindTexture(GL_TEXTURE_2D, m_controltexture6);
@@ -282,26 +263,45 @@ void NGLScene::paintGL()
   glBindTexture(GL_TEXTURE_2D, m_controltexture3);
   ngl::ShaderLib::setUniform("shadowTexture", 6);
   glActiveTexture(GL_TEXTURE7);
-  glBindTexture(GL_TEXTURE_2D, m_controltexture1);
+  glBindTexture(GL_TEXTURE_2D, m_controltexture9);
   ngl::ShaderLib::setUniform("specularTexture", 7);
   glActiveTexture(GL_TEXTURE8);
   glBindTexture(GL_TEXTURE_2D, m_controltexture1);
   ngl::ShaderLib::setUniform("outlineTexture", 8);
   
-
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 6);
   glBindVertexArray(0);
-  
-  
+    
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+GLuint NGLScene::loadTexture(std::string_view _texpath)
+{
+  ngl::Texture texture(_texpath);
+  GLuint texname;
+  texname = texture.setTextureGL();
+
+  // check or errors
+  if (texname == 0)
+  {
+    ngl::NGLMessage::addError("Failed to load texture!");
+  }
+  else
+  {
+    ngl::NGLMessage::addMessage("Loaded Texture: " + std::string(_texpath));
+  }
+
+  return texname;
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 
 GLuint NGLScene::makeQuad()
 {
-     // create a quad for drawing the fbo
+  // create a quad for drawing the final fbo
   GLfloat quadData[] = {
-    // Positions    // Texture Coords
+    // Positions    // UVs
      -1.0f,  1.0f,  0.0f, 1.0f,
      -1.0f, -1.0f,  0.0f, 0.0f,
       1.0f, -1.0f,  1.0f, 0.0f,
@@ -317,18 +317,30 @@ GLuint NGLScene::makeQuad()
   glBufferData(GL_ARRAY_BUFFER, sizeof(quadData), &quadData, GL_STATIC_DRAW);
 
   GLuint quadVAO;
+  // positions vao
   glGenVertexArrays(1, &quadVAO);
   glBindVertexArray(quadVAO);
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
 
-  // Texture coordinate attribute (location = 1) swap GLuint to texture name
+  // UVs vao
   glEnableVertexAttribArray(1);
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
   glBindVertexArray(0);
   
+  // check for errors
+  if (glGetError() != GL_NO_ERROR)
+  {
+    ngl::NGLMessage::addError("Failed to create a Screen Quad!");
+  }
+  else
+  {
+    ngl::NGLMessage::addMessage("Created Screen Quad");
+  }
+
   return quadVAO;
 }
+
 //----------------------------------------------------------------------------------------------------------------------
 
 void NGLScene::keyPressEvent(QKeyEvent *_event)
@@ -344,6 +356,7 @@ void NGLScene::keyPressEvent(QKeyEvent *_event)
       m_win.spinYFace=0;
       m_modelPos.set(ngl::Vec3::zero());
       break;
+  // WASD + QE keys to move the light source    
   case Qt::Key_W : 
       m_lightPos.m_y+=0.1f;
       break;

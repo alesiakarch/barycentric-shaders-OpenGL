@@ -6,30 +6,23 @@ in vec3 normal;
 in vec2 uv;
 in vec3 fragPos;
 
-
-// texture maps that are going to be blended
-uniform sampler2D diffuseTexture1;
-uniform sampler2D diffuseTexture2;
-uniform sampler2D diffuseTexture3;
-
 uniform vec3 lightPos;
 
-// calculate the light over the final maps?
+// calculates the amount of light that hits the fragment, it will become diffuse weight
+// diffuse light calculation algorithm from: https://learnopengl.com/Lighting/Basic-Lighting 
 void main()
 {   
     //vec3 lightColour = vec3(1.0, 1.0, 1.0);
 
     // ambient light
     //float ambientStrength = 0.3;
-    //vec3 ambient = ambientStrength * lightColour; // ambient light, strenght * light colour
-    
+    //vec3 ambient = ambientStrength * lightColour;
 
-   // diffuse light
+    // diffuse light
     vec3 lightDir = normalize(lightPos - fragPos);
     float lightIntensity = max(dot(normal, lightDir), 0.0);
-    //vec3 diffuse = lightIntensity * lightColour; // diffuse light, strenght * light colour 
 
-      
+    // stores the weight to pass down to quad shader
     finalColour = vec4(lightIntensity, 0.0, 0.0, 1.0);
     
 }

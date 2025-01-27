@@ -91,9 +91,10 @@ void NGLScene::initializeGL()
   ngl::ShaderLib::loadShader("SpecularShader", "../shaders/MeshVertexShader.glsl", "../shaders/SpecularFragmentShader.glsl");
   ngl::ShaderLib::use("SpecularShader");
 
-  // load texture for the mesh
-  ngl::Texture testtexture("../textures/testTexture.png");
-  m_textureName = testtexture.setTextureGL();
+  ngl::ShaderLib::loadShader("OutlineShader", "../shaders/MeshVertexShader.glsl", "../shaders/OutlineFragmentShader.glsl");
+  ngl::ShaderLib::use("OutlineShader");
+
+  ngl::ShaderLib::loadShader("UVShader", "../shaders/MeshVertexShader.glsl", "../shaders/UVFragmentShader.glsl");
 
   // load control images
   ngl::Texture controltexture1("../textures/control_image1.png");
@@ -115,30 +116,63 @@ void NGLScene::initializeGL()
   ngl::Texture controltexture9("../textures/control_image9.png");
   m_controltexture9 = controltexture9.setTextureGL();
   
+  ngl::Texture testTexture("../textures/testTexture.png");
+  m_textureName = testTexture.setTextureGL();
+  // load shader for a light cube
   ngl::ShaderLib::use(ngl::nglColourShader);
   ngl::ShaderLib::setUniform("Colour", 1.0f, 1.0f, 1.0f, 1.0f);
 
-  ngl::ShaderLib::loadShader("TestShader", "../shaders/MeshVertexShader.glsl", "../shaders/HandFragmentShader.glsl");
-  ngl::ShaderLib::use("TestShader");
-
+  // load shader for the screen quad
   ngl::ShaderLib::loadShader("QuadShader", "../shaders/QuadVertexShader.glsl", "../shaders/FinalQuadFragmentShader.glsl");
   ngl::ShaderLib::use("QuadShader");
 
-
+  // create a framebuffer object for each pass
   FBO fboDiffuse = createFBO(m_win.width, m_win.height);
   FBO fboShadow = createFBO(m_win.width, m_win.height);
   FBO fboSpecular = createFBO(m_win.width, m_win.height);
+  FBO fboOutline = createFBO(m_win.width, m_win.height);
+
   m_fboID = fboDiffuse.fboId;
   m_fbotexture = fboDiffuse.fboTexture; 
   m_fboID2 = fboShadow.fboId;
   m_fbotexture2 = fboShadow.fboTexture;
   m_fboID3 = fboSpecular.fboId;
   m_fbotexture3 = fboSpecular.fboTexture;
+  m_fboID4 = fboOutline.fboId;
+  m_fbotexture4 = fboOutline.fboTexture;
+
+  glGenFramebuffers(1, &m_fboID5);    // Generate FBO
+  glBindFramebuffer(GL_FRAMEBUFFER, m_fboID5);
+
+  // Create a colour texture
+  glGenTextures(1, &m_fbotexture5);
+  glBindTexture(GL_TEXTURE_2D, m_fbotexture5);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1024, 1024, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);  
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_fbotexture5, 0);
+
+  // Create the render buffer for depth and stencil
+  GLuint rboID;
+  glGenRenderbuffers(1, &rboID);
+  glBindRenderbuffer(GL_RENDERBUFFER, rboID);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1024, 1024);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rboID);
+
+  // Check if the FBO is complete
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+  {
+    std::cerr << "Framebuffer is not complete!" << std::endl;
+  }
+
+  // Unbind FBO
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glBindTexture(GL_TEXTURE_2D, 0);
 
   // make screen quad
   m_quad = makeQuad();
-
-  // have multiple shaders (diffuse, specular, etc) applied to the hand, then snapshoted to the fbo
 
   ngl::VAOPrimitives::createTrianglePlane("world_grid", 10, 10, 1, 1, ngl::Vec3::up()); // AK creates a grid
 
@@ -162,7 +196,7 @@ void NGLScene::timerEvent(QTimerEvent *_event)
 void NGLScene::paintGL()
 {
  
-  // clear the screen and depth buffer m_fboID
+  // connect the diffuse FBO
   glBindFramebuffer(GL_FRAMEBUFFER, m_fboID);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glViewport(0,0, m_win.width, m_win.height);
@@ -173,11 +207,6 @@ void NGLScene::paintGL()
   mouseRotation.m_m[3][0] = m_modelPos.m_x; 
   mouseRotation.m_m[3][1] = m_modelPos.m_y; 
   mouseRotation.m_m[3][2] = m_modelPos.m_z; 
-
-  // draws the grid
-  // ngl::ShaderLib::use(ngl::nglColourShader);
-  // ngl::ShaderLib::setUniform("MVP", m_cam * m_view * mouseRotation);
-  // ngl::VAOPrimitives::draw("world_grid"); 
 
   // draw light
   ngl::ShaderLib::use(ngl::nglColourShader);
@@ -190,9 +219,8 @@ void NGLScene::paintGL()
 
   ngl::ShaderLib::use("DiffuseShader");
   ngl::ShaderLib::setUniform("MVP", m_cam * m_view * mouseRotation);
-  ngl::ShaderLib::setUniform("modelMat", mouseRotation);
+    ngl::ShaderLib::setUniform("modelMat", mouseRotation); //modelMat for the vertex shader
   ngl::ShaderLib::setUniform("lightPos", m_lightPos);
-  ngl::ShaderLib::setUniform("viewPos", m_eyePos );
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, m_controltexture5);
   ngl::ShaderLib::setUniform("diffuseTexture1", 0);
@@ -202,11 +230,10 @@ void NGLScene::paintGL()
   glActiveTexture(GL_TEXTURE2);
   glBindTexture(GL_TEXTURE_2D, m_controltexture9);
   ngl::ShaderLib::setUniform("diffuseTexture3", 2);
-  glActiveTexture(GL_TEXTURE3);
-  glBindTexture(GL_TEXTURE_2D, m_controltexture7);
-  ngl::ShaderLib::setUniform("diffuseTexture4", 3);
   m_mesh->draw();
 
+
+  // connect the shadow FBO
   glBindFramebuffer(GL_FRAMEBUFFER, m_fboID2);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glViewport(0,0, m_win.width, m_win.height);
@@ -214,38 +241,45 @@ void NGLScene::paintGL()
   mouseRotation.m_m[3][0] = m_modelPos.m_x; 
   mouseRotation.m_m[3][1] = m_modelPos.m_y; 
   mouseRotation.m_m[3][2] = m_modelPos.m_z; 
-
-  ngl::ShaderLib::use(ngl::nglColourShader);
-  ngl::Transformation tm;
-  tm.setPosition(m_lightPos);
-  tm.setScale(0.1f,0.1f,0.1f);
-  ngl::ShaderLib::setUniform("MVP", m_cam * m_view * tx.getMatrix()* mouseRotation);
-  ngl::VAOPrimitives::draw("cube");
   
   ngl::ShaderLib::use("ShadowShader");
   ngl::ShaderLib::setUniform("MVP", m_cam * m_view * mouseRotation);
-  ngl::ShaderLib::setUniform("modelMat", mouseRotation);
+    ngl::ShaderLib::setUniform("modelMat", mouseRotation); // modelMat for the vertex shader
   ngl::ShaderLib::setUniform("lightPos", m_lightPos);
-  std::cout << m_lightPos.m_x << ", " << m_lightPos.m_y << ", " << m_lightPos.m_z << std::endl;
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, m_controltexture1);
-  ngl::ShaderLib::setUniform("ShadowTexture1", 0);
   m_mesh->draw();
 
-  // specular fbo
+  // connect the specular FBO
   glBindFramebuffer(GL_FRAMEBUFFER, m_fboID3);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glViewport(0,0, m_win.width, m_win.height);
   
   ngl::ShaderLib::use("SpecularShader");
   ngl::ShaderLib::setUniform("MVP", m_cam * m_view * mouseRotation);
-  ngl::ShaderLib::setUniform("modelMat", mouseRotation);
+  ngl::ShaderLib::setUniform("modelMat", mouseRotation); // modelMat for the vertex shader
   ngl::ShaderLib::setUniform("lightPos", m_lightPos);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, m_controltexture9);
-  ngl::ShaderLib::setUniform("specularTexture1", 0);
+  ngl::ShaderLib::setUniform("viewPos", m_eyePos);
   m_mesh->draw();
 
+  // connect the outline FBO
+  glBindFramebuffer(GL_FRAMEBUFFER, m_fboID4);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glViewport(0,0, m_win.width, m_win.height);
+  
+  ngl::ShaderLib::use("OutlineShader");
+  ngl::ShaderLib::setUniform("MVP", m_cam * m_view * mouseRotation);
+  ngl::ShaderLib::setUniform("modelMat", mouseRotation); // modelMat for the vertex shader
+  ngl::ShaderLib::setUniform("lightPos", m_lightPos);
+  ngl::ShaderLib::setUniform("viewPos", m_eyePos);
+  m_mesh->draw();
+
+ // connect the UV FBO
+  glBindFramebuffer(GL_FRAMEBUFFER, m_fboID5);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glViewport(0,0, m_win.width, m_win.height);
+  
+  ngl::ShaderLib::use("UVShader");
+  ngl::ShaderLib::setUniform("MVP", m_cam * m_view * mouseRotation); 
+  m_mesh->draw();
 
   // default framebuffer draw quad
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -255,15 +289,34 @@ void NGLScene::paintGL()
   ngl::ShaderLib::use("QuadShader");
   glBindVertexArray(m_quad);
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, m_fbotexture);
-  ngl::ShaderLib::setUniform("Diffusetex", 0);
+  glBindTexture(GL_TEXTURE_2D, m_fbotexture5);
+  ngl::ShaderLib::setUniform("UVTexture", 0);
   glActiveTexture(GL_TEXTURE1);
-  glBindTexture(GL_TEXTURE_2D, m_fbotexture2);
-  ngl::ShaderLib::setUniform("Shadowtex", 1);
+  glBindTexture(GL_TEXTURE_2D, m_fbotexture);
+  ngl::ShaderLib::setUniform("DiffuseWeight", 1);
   glActiveTexture(GL_TEXTURE2);
+  glBindTexture(GL_TEXTURE_2D, m_fbotexture2);
+  ngl::ShaderLib::setUniform("ShadowWeight", 2);
+  glActiveTexture(GL_TEXTURE3);
   glBindTexture(GL_TEXTURE_2D, m_fbotexture3);
-  ngl::ShaderLib::setUniform("Speculartex", 2);
-  ngl::ShaderLib::setUniform("lightPos",m_lightPos);
+  ngl::ShaderLib::setUniform("SpecularWeight", 3);
+  glActiveTexture(GL_TEXTURE4);
+  glBindTexture(GL_TEXTURE_2D, m_fbotexture4);
+  ngl::ShaderLib::setUniform("OutlineWeight", 4);
+  glActiveTexture(GL_TEXTURE5);
+  glBindTexture(GL_TEXTURE_2D, m_textureName);
+  ngl::ShaderLib::setUniform("diffuseTexture", 5);
+  glActiveTexture(GL_TEXTURE6);
+  glBindTexture(GL_TEXTURE_2D, m_controltexture2);
+  ngl::ShaderLib::setUniform("shadowTexture", 6);
+  glActiveTexture(GL_TEXTURE7);
+  glBindTexture(GL_TEXTURE_2D, m_controltexture9);
+  ngl::ShaderLib::setUniform("specularTexture", 7);
+  glActiveTexture(GL_TEXTURE8);
+  glBindTexture(GL_TEXTURE_2D, m_controltexture1);
+  ngl::ShaderLib::setUniform("outlineTexture", 8);
+  
+
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 6);
   glBindVertexArray(0);
   

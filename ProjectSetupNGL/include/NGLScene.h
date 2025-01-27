@@ -107,10 +107,14 @@ private:
     GLuint m_fbotexture;
     GLuint m_fbotexture2;
     GLuint m_fbotexture3;
+    GLuint m_fbotexture4;
+    GLuint m_fbotexture5;
     // name for the fbo
     GLuint m_fboID; 
     GLuint m_fboID2;
     GLuint m_fboID3;
+    GLuint m_fboID4;
+    GLuint m_fboID5;
     // name for the loaded textures
     GLuint m_textureName;
     GLuint m_controltexture1;

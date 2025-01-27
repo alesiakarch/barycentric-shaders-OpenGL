@@ -4,28 +4,45 @@ layout(location = 0) out vec4 finalColour;
 
 in vec2 uv;
 
+uniform sampler2D UVTexture;
 // t_i parameters, end goal maps that i expect to combine
-uniform sampler2D Diffusetex;
-uniform sampler2D Shadowtex;
-uniform sampler2D Speculartex;
-uniform vec3 lightPos;
+uniform sampler2D DiffuseWeight;
+uniform sampler2D ShadowWeight;
+uniform sampler2D SpecularWeight;
+uniform sampler2D OutlineWeight;
 
-// calculate the light over the final maps?
+
+// control images to be assigned to each weight
+uniform sampler2D diffuseTexture;
+uniform sampler2D shadowTexture;
+uniform sampler2D specularTexture;
+uniform sampler2D outlineTexture;
+
 void main()
 {
-    // if (texture(Shadowtex, uv).a == 0.0)
-    // {
-    //     finalColour = texture(Diffusetex, uv);
-    // }
-    // else if (texture(Speculartex, uv).a > 0.0)
-    // {
-    //     finalColour = texture(Speculartex, uv);
-    // }
-    // else
-    // {
-    //     finalColour = texture(Shadowtex, uv);
-    // }
-    // finalColour = (0.33 * texture(Diffusetex, uv)) + (0.33 * texture(Shadowtex, uv) + (0.33 * texture(Speculartex, uv)));
-    // //finalColour = texture(Speculartex, uv);
-    finalColour = texture(Diffusetex, uv);
+    //finalColour = texture(UVTexture, uv);
+    vec2 uv = gl_FragCoord.xy / vec2(1024, 1024); // get the uv coordinates
+    // trying to blend diffuse with shadow
+    vec2 meshUV = clamp(texture(UVTexture, uv), 0.0, 1.0).rg; // get the uv coordinates
+
+    float wx = texture(DiffuseWeight, uv).r; // weight for the first texture
+    float wy = texture(ShadowWeight, uv).g; // weight for the second texture
+    float wz = texture(SpecularWeight, uv).b; // weight for the third texture // my barycentric coords basically
+    float ww = texture(OutlineWeight, uv).a; // weight for the fourth texture
+
+    vec3 tex1 = texture(diffuseTexture, meshUV).rgb;
+    vec3 tex2 = texture(shadowTexture, meshUV).rgb;
+    vec3 tex3 = texture(specularTexture, meshUV).rgb;
+    vec3 tex4 = texture(outlineTexture, meshUV).rgb;
+     
+    float totalWeight = wx + wy + wz + ww; // normalizing the weights to 1
+    wx /= totalWeight;
+    wy /= totalWeight;
+    wz /= totalWeight;
+    ww /= totalWeight;
+
+    vec3 blendtex = tex1 * wx + tex2 * wy + tex3 * wz + tex4 * ww; // blending the textures
+    //finalColour = vec4(blendtex, 1.0);
+
+    finalColour = vec4(tex1, 1.0);
 }

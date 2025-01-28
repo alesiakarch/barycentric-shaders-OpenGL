@@ -12,11 +12,11 @@ uniform vec3 lightPos;
 void main()
 {   
     vec3 lightDir = normalize(lightPos - fragPos);
-    float lightIntensity = max(dot(lightDir, normal), 0.0);
+    float lightIntensity = max(dot(lightDir, normal), 0.0f);
     float outline = abs(normal.x) + abs(normal.y) + abs(normal.z); // edge detection
-    float thinkness = 0.1 + (1.0 - lightIntensity) * 0.5;
+    float thinkness = 0.1f + (1.0f - lightIntensity) * 0.5f;
 
     float outlineMask = outline * thinkness;
     // outline weight to pass down to quad shader
-    finalColour = vec4(0.0, 0.0, 0.0, outlineMask);
+    finalColour = vec4(0.0f, 0.0f, 0.0f, outlineMask);
 }

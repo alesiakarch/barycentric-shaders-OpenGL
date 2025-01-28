@@ -12,9 +12,9 @@ uniform vec3 lightPos;
 void main()
 {   
     vec3 lightDir = normalize(lightPos - fragPos);  
-    float lightIntensity = max(dot(lightDir, normal), 0.0); 
+    float lightIntensity = max(dot(lightDir, normal), 0.0f); 
 
     // shadow weight to pass down to quad shader
-    finalColour = vec4(0.0, 1 - lightIntensity, 0.0, 1.0);
+    finalColour = vec4(0.0f, 1 - lightIntensity, 0.0f, 1.0f);
 
 }

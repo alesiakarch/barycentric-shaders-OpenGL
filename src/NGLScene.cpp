@@ -47,7 +47,7 @@ NGLScene::FBO NGLScene::createFBO(int width, int height) {
     // Create a colour texture
     glGenTextures(1, &fbo.fboTexture);
     glBindTexture(GL_TEXTURE_2D, fbo.fboTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo.fboTexture, 0);
@@ -350,36 +350,61 @@ void NGLScene::keyPressEvent(QKeyEvent *_event)
   switch (_event->key())
   {
   // escape key to quite
-  case Qt::Key_Escape : QGuiApplication::exit(EXIT_SUCCESS); break;
-  case Qt::Key_Space :
-      m_win.spinXFace=0;
-      m_win.spinYFace=0;
-      m_modelPos.set(ngl::Vec3::zero());
-      break;
-  // WASD + QE keys to move the light source    
-  case Qt::Key_W : 
-      m_lightPos.m_y+=0.1f;
-      break;
-  case Qt::Key_S : 
-      m_lightPos.m_y-=0.1f;
-      break;
-  case Qt::Key_A : 
-      m_lightPos.m_x-=0.1f;
-      break;
-  case Qt::Key_D :
-      m_lightPos.m_x+=0.1f;
-      break;
-  case Qt::Key_Q :
-      m_lightPos.m_z+=0.1f;
-      break;
-  case Qt::Key_E :
-      m_lightPos.m_z-=0.1f;
-      break;
+  case Qt::Key_Escape :
+  {
+    QGuiApplication::exit(EXIT_SUCCESS); break;
+  } 
 
+  case Qt::Key_Space :
+  {
+    m_win.spinXFace=0;
+    m_win.spinYFace=0;
+    m_modelPos.set(ngl::Vec3::zero());
+    break;
+  }
+      
+  // WASD + QE keys to move the light source    
+  case Qt::Key_W :
+  {
+     m_lightPos.m_y+=0.1f;
+      break;
+  } 
+     
+  case Qt::Key_S : 
+  {
+      m_lightPos.m_y-=0.1f;
+        break;
+  }
+      
+  case Qt::Key_A : 
+  {
+      m_lightPos.m_x-=0.1f;
+        break;
+  }
   
-  default : break;
+  case Qt::Key_D :
+  {
+    m_lightPos.m_x+=0.1f;
+      break;
+  }
+      
+  case Qt::Key_Q :
+  {
+     m_lightPos.m_z+=0.1f;
+      break;
+  }
+     
+  case Qt::Key_E :
+  {
+    m_lightPos.m_z-=0.1f;
+      break;
+  }
+        
+  default : 
+  {
+    break;
   }
   // finally update the GLWindow and re-draw
-
+  }
     update();
 }

@@ -12,17 +12,17 @@ uniform vec3 lightPos;
 // diffuse light calculation algorithm from: https://learnopengl.com/Lighting/Basic-Lighting 
 void main()
 {   
-    //vec3 lightColour = vec3(1.0, 1.0, 1.0);
+    //vec3 lightColour = vec3(1.0f, 1.0f, 1.0f);
 
     // ambient light
-    //float ambientStrength = 0.3;
+    //float ambientStrength = 0.3f;
     //vec3 ambient = ambientStrength * lightColour;
 
     // diffuse light
     vec3 lightDir = normalize(lightPos - fragPos);
-    float lightIntensity = max(dot(normal, lightDir), 0.0);
+    float lightIntensity = max(dot(normal, lightDir), 0.0f);
 
     // stores the weight to pass down to quad shader
-    finalColour = vec4(lightIntensity, 0.0, 0.0, 1.0);
+    finalColour = vec4(lightIntensity, 0.0f, 0.0f, 1.0f);
     
 }

@@ -8,6 +8,6 @@ in vec2 uv;
 void main()
 {   
 
-    finalColour = vec4(uv, 0.0, 1.0);
+    finalColour = vec4(uv, 0.0f, 1.0f);
 
 }

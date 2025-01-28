@@ -14,16 +14,16 @@ uniform vec3 viewPos;
 // specular light calculation algorithm from: https://learnopengl.com/Lighting/Basic-Lighting
 void main()
 {   
-    float specularStrength = 0.5;
-    float shininess = 8.0;
+    float specularStrength = 0.5f;
+    float shininess = 8.0f;
     vec3 lightDir = normalize(lightPos - fragPos);
     vec3 viewDir = normalize(viewPos - fragPos);
     vec3 reflectDir = reflect(-lightDir, normal);
 
     // calculate specular reflection
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0f), shininess);
     float specular = specularStrength * spec; // will be multiplied with a texture later
 
     // specular weight to pass down to quad shader
-    finalColour = vec4(0.0, 0.0, specular, 1.0);
+    finalColour = vec4(0.0f, 0.0f, specular, 1.0f);
 }

@@ -24,7 +24,7 @@ void main()
 {
     // get mehs uv coordinates
     vec2 meshUV = texture(UVTexture, uv).rg; 
-    meshUV = clamp(meshUV, 0.0, 1.0); 
+    meshUV = clamp(meshUV, 0.0f, 1.0f); 
 
     // extract the weights from the textures
     float wx = texture(DiffuseWeight, uv).r; // weight for the first texture
@@ -48,5 +48,5 @@ void main()
     vec3 blendtex = tex1 * wx + tex2 * wy + tex3 * wz + tex4 * ww; // blending the textures
     
     // output the final colour
-    finalColour = vec4(blendtex, 1.0);
+    finalColour = vec4(blendtex, 1.0f);
 }

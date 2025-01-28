@@ -1,4 +1,0 @@
-/home/s5221034/ASE/programming-project-alesiakarch/OpenGLTest/cmake-build-debug/CMakeFiles/glad.dir
-/home/s5221034/ASE/programming-project-alesiakarch/OpenGLTest/cmake-build-debug/CMakeFiles/OpenGLTest.dir
-/home/s5221034/ASE/programming-project-alesiakarch/OpenGLTest/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/s5221034/ASE/programming-project-alesiakarch/OpenGLTest/cmake-build-debug/CMakeFiles/rebuild_cache.dir

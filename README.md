@@ -1,9 +1,14 @@
 ### Operating Instructions
 
 The application is designed to be run from its /build folder.
-After building the program run ./NPRRendering
-The light position can be adjusted using WASD for x/y axis and QE for z-axis.
+After building the program, run ./NPRRendering
+The light position can be adjusted using WASD for the x/y axis and QE for the z-axis.
 The viewport allows move around with mouse buttons. 
+
+
+https://github.com/user-attachments/assets/3b20330e-0b8a-4638-82e5-8c71bc4f2312
+
+
 
 # NPR Rendering approach to charcoal shaders
  
@@ -15,15 +20,15 @@ After doing some background research I found several approaches to how to acheve
 
 Given this research, I had several options regarding how I can implement the "effect": either as texture manipulation and shading or as a general post-processing effect on the scene. 
 
-I thought that Akleman's and Du's approach from "Charcoal Rendering and Shading with Reflections" (2016a) was closest to what I had in mind. This method allows the developer to specify the shading parameters separately and, after confirming that they satisfy the partition of unity, blend the corresponding control textures, to achieve a reliable charcoal look. 
+I thought that Akleman's and Du's approach from "Charcoal Rendering and Shading with Reflections" (2016a) was closest to what I had in mind. This method allows the developer to specify the shading parameters separately and, after confirming that they satisfy the partition of unity, blend the corresponding control textures, to achieve a reliable charcoal look. Akleman and Du presented this image as an example output of their approach:
 
 ![Figure 1](CharcoalShader.png)
 
-Hence, for my project I set out to attempt to recreate such approach and create a suitable rendering system, that would blend chosen control textures based on their corresponding parameters. This way the final colour of the pixel is controled by textures' intensity and influence rather than by the lighting model, maintaining the artistic style. 
+Hence, for my project, I set out to attempt to recreate such an approach and create a suitable rendering system that would blend chosen control textures based on their corresponding parameters. This way the final colour of the pixel is controlled by textures' intensity and influence rather than by the lighting model, maintaining the artistic style. 
 
 # Design & Implementation
 
-This application is designed around the idea of blending a precaclulated set of parameters. According to Akleman and Du (2016a), a part of the Barycentric shaders shading equation 
+This application is designed around the idea of blending a pre-calculated set of parameters. According to Akleman and Du (2016a), a part of the Barycentric shaders' shading equation 
 
 ![Figure 2](BaryShader.png)
 
